@@ -105,7 +105,7 @@ Example of a single instruction:
 - "Analyze the dataset for missing values and report their percentage."
     """
 
-CRITIC_PROMPT = """The previous instruction was {last_step} \nThe following is the output of that instruction.
+STEP_CRITIC_PROMPT = """The previous instruction was {last_step} \nThe following is the output of that instruction.
     if the output of the instruction completely satisfies the instruction, then reply with ##YES##.
     For example, if the instruction is to list companies that use AI, then the output contains a list of companies that use AI.
     If the output contains the phrase 'I'm sorry but...' then it is likely not fulfilling the instruction. \n
@@ -250,17 +250,17 @@ class Pipe:
             ],
         }
 
+        # Generic LLM completion, used for servicing Open WebUI originated requests
+        generic_assistant = ConversableAgent(
+            name="Generic_Assistant",
+            llm_config=ollama_llm_config,
+            human_input_mode="NEVER",
+        )
+
         # Vision Assistant
         vision_assistant = ConversableAgent(
             name="Vision_Assistant",
             llm_config=vision_llm_config,
-            human_input_mode="NEVER",
-        )
-
-        # Generic Assistant - Used for general inquiry. Does not call tools.
-        generic_assistant = ConversableAgent(
-            name="Generic_Assistant",
-            llm_config=ollama_llm_config,
             human_input_mode="NEVER",
         )
 
@@ -290,10 +290,24 @@ class Pipe:
             human_input_mode="NEVER",
         )
 
+        # Step Critic
+        step_critic = ConversableAgent(
+            name="Step_Critic",
+            llm_config=ollama_llm_config,
+            human_input_mode="NEVER",
+        )
+
         # Reflection Assistant: Reflect on plan progress and give the next step
         reflection_assistant = ConversableAgent(
             name="ReflectionAssistant",
             system_message=REFLECTION_ASSISTANT_PROMPT,
+            llm_config=ollama_llm_config,
+            human_input_mode="NEVER",
+        )
+
+        # Report Generator
+        report_generator = ConversableAgent(
+            name="Report_Generator",
             llm_config=ollama_llm_config,
             human_input_mode="NEVER",
         )
@@ -457,9 +471,9 @@ class Pipe:
                 reflection_message = last_step
                 # Ask the critic if the previous step was properly accomplished
                 output = await user_proxy.a_initiate_chat(
-                    recipient=generic_assistant,
+                    recipient=step_critic,
                     max_turns=1,
-                    message=CRITIC_PROMPT.format(
+                    message=STEP_CRITIC_PROMPT.format(
                         last_step=last_step,
                         context=answer_output,
                         last_output=last_output,
@@ -535,7 +549,7 @@ class Pipe:
         # Now that we've gathered all the information we need, we will summarize it to directly answer the original prompt
         final_prompt = f"Answer the user's query: {plan_instruction}. Use the following information only. Do NOT supplement with your own knowledge: {answer_output}"
         final_output = await user_proxy.a_initiate_chat(
-            message=final_prompt, max_turns=1, recipient=generic_assistant
+            message=final_prompt, max_turns=1, recipient=report_generator
         )
 
         return final_output.chat_history[-1]["content"]
