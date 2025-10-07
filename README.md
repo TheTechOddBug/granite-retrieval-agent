@@ -173,8 +173,3 @@ What companies are prominent adopters of the open-source technologies my team is
 ```text
 Study my meeting notes to figure out the capabilities of the projects I’m involved in. Then, find me other open-source projects with similar features.
 ```
-
-
-
-
-
