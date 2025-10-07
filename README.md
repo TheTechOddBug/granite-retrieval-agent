@@ -1,10 +1,4 @@
-Here’s an updated README with the requested model changes plus a short, sourced blurb on what Granite 4 brings.
-
----
-
 # Granite Retrieval and Image Research Agents
-
-> **Models:** Retrieval Agent → `ibm/granite4:latest` • Image Researcher → `ibm/granite4:tiny-h`
 
 # 📚 Agents Overview
 
